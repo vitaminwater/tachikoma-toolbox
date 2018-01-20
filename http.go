@@ -20,6 +20,7 @@ func init() {
 	proxyPassword := os.Getenv("PROXY_PASSWORD")
 
 	if proxyUser == "" && proxyPassword == "" {
+		client = http.DefaultClient
 		return
 	}
 
@@ -40,13 +41,8 @@ func init() {
 	client = &http.Client{Transport: tr}
 }
 
-func GetJSONProxy(url string, o interface{}) {
-	r, err := client.Get(url)
-	Fatal(err)
-	defer r.Body.Close()
-
-	err = json.NewDecoder(r.Body).Decode(o)
-	Fatal(err)
+func GetTransport() http.RoundTripper {
+	return client.Transport
 }
 
 func GetJSONDirect(url string, o interface{}) {
@@ -59,9 +55,10 @@ func GetJSONDirect(url string, o interface{}) {
 }
 
 func GetJSON(url string, o interface{}) {
-	if client != nil {
-		GetJSONProxy(url, o)
-		return
-	}
-	GetJSONDirect(url, o)
+	r, err := client.Get(url)
+	Fatal(err)
+	defer r.Body.Close()
+
+	err = json.NewDecoder(r.Body).Decode(o)
+	Fatal(err)
 }
