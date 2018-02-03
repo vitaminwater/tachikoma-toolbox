@@ -1,6 +1,7 @@
 package timeseries
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,28 +20,25 @@ type GaugeMetric struct {
 	g *prometheus.GaugeVec
 }
 
-func (m GaugeMetric) Index(ls []string, d interface{}) {
+func (m GaugeMetric) Index(labels []string, d interface{}) error {
 	f, ok := d.(float64)
 	if ok != true {
-		return
+		return errors.New("GaugeMetric requires float64")
 	}
 	m.g.WithLabelValues(labels...).Set(f)
 }
 
-func (m GaugeMetric) Register(registry *prometheus.Registry) {
-	registry.MustRegister(m.g)
-}
-
-func NewGaugeMetric() GaugeMetric {
+func NewGaugeMetric(labels []string) GaugeMetric {
 	m := GaugeMetric{
 		g: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: fmt.Sprintf("%s_gauge", name),
 				Help: help,
 			},
-			[]string{"source", "base", "counter"},
+			labels,
 		),
 	}
+	registry.MustRegister(m.g)
 	return m
 }
 
@@ -51,29 +49,26 @@ func NewGaugeMetric() GaugeMetric {
 type SummaryMetric struct {
 }
 
-func (m SummaryMetric) Index(ls []string, d interface{}) {
+func (m SummaryMetric) Index(labels []string, d interface{}) error {
 	f, ok := d.(float64)
 	if ok != true {
-		return
+		return errors.New("SummaryMetric requires float64")
 	}
 
 	m.s.WithLabelValues(labels...).Observe(f)
 }
 
-func (m SummaryMetric) Register(registry *prometheus.Registry) {
-	registry.MustRegister(m.g)
-}
-
-func NewSummaryMetric() SummaryMetric {
+func NewSummaryMetric(labels []string, registry *prometheus.Registry) SummaryMetric {
 	m := SummaryMetric{
 		g: prometheus.NewSummaryVec(
 			prometheus.SummaryOpts{
 				Name: fmt.Sprintf("%s_summary", name),
 				Help: help,
 			},
-			[]string{"source", "base", "counter"},
+			labels,
 		),
 	}
+	registry.MustRegister(m.g)
 	return m
 }
 
@@ -84,6 +79,12 @@ func NewSummaryMetric() SummaryMetric {
 type WordCount struct {
 }
 
-func (wc WordCount) Index(ls []string, d interface{}) {
+func (wc WordCount) Index(labels []string, d interface{}) error {
+	return nil
+}
 
+func NewWordCount(labels []string) WordCount {
+	wc := WordCount{}
+	//registry.MustRegister(m.g)
+	return wc
 }
