@@ -1,10 +1,12 @@
 package timeseries
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/prometheus/client_golang/prometheus"
+	tachikoma "github.com/vitaminwater/tachikoma-toolbox"
 )
 
 type metricRepository map[string]interface{}
@@ -58,6 +60,10 @@ type GaugeMetric struct {
 }
 
 func (m GaugeMetric) Index(labels []string, d interface{}) error {
+	if reflect.TypeOf(d).Kind() != reflect.Float64 {
+		tachikoma.Fatal(errors.New("GaugeMetric requires a float64 value"))
+	}
+
 	m.g.WithLabelValues(labels...).Set(reflect.ValueOf(d).Float())
 	return nil
 }
@@ -78,6 +84,10 @@ type SummaryMetric struct {
 }
 
 func (m SummaryMetric) Index(labels []string, d interface{}) error {
+	if reflect.TypeOf(d).Kind() != reflect.Float64 {
+		tachikoma.Fatal(errors.New("SummaryMetric requires a float64 value"))
+	}
+
 	m.g.WithLabelValues(labels...).Observe(reflect.ValueOf(d).Float())
 	return nil
 }
