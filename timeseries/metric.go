@@ -8,8 +8,7 @@ import (
 )
 
 type Metric interface {
-	Index([]string, interface{})
-	Register(*prometheus.Registry)
+	Index([]string, interface{}) error
 }
 
 /**
@@ -26,9 +25,10 @@ func (m GaugeMetric) Index(labels []string, d interface{}) error {
 		return errors.New("GaugeMetric requires float64")
 	}
 	m.g.WithLabelValues(labels...).Set(f)
+	return nil
 }
 
-func NewGaugeMetric(labels []string) GaugeMetric {
+func NewGaugeMetric(name, help string, labels []string) Metric {
 	m := GaugeMetric{
 		g: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
@@ -38,7 +38,7 @@ func NewGaugeMetric(labels []string) GaugeMetric {
 			labels,
 		),
 	}
-	registry.MustRegister(m.g)
+	mustRegister(m.g)
 	return m
 }
 
@@ -47,6 +47,7 @@ func NewGaugeMetric(labels []string) GaugeMetric {
  */
 
 type SummaryMetric struct {
+	g *prometheus.SummaryVec
 }
 
 func (m SummaryMetric) Index(labels []string, d interface{}) error {
@@ -55,10 +56,11 @@ func (m SummaryMetric) Index(labels []string, d interface{}) error {
 		return errors.New("SummaryMetric requires float64")
 	}
 
-	m.s.WithLabelValues(labels...).Observe(f)
+	m.g.WithLabelValues(labels...).Observe(f)
+	return nil
 }
 
-func NewSummaryMetric(labels []string, registry *prometheus.Registry) SummaryMetric {
+func NewSummaryMetric(name, help string, labels []string) Metric {
 	m := SummaryMetric{
 		g: prometheus.NewSummaryVec(
 			prometheus.SummaryOpts{
@@ -68,7 +70,7 @@ func NewSummaryMetric(labels []string, registry *prometheus.Registry) SummaryMet
 			labels,
 		),
 	}
-	registry.MustRegister(m.g)
+	mustRegister(m.g)
 	return m
 }
 
@@ -83,7 +85,7 @@ func (wc WordCount) Index(labels []string, d interface{}) error {
 	return nil
 }
 
-func NewWordCount(labels []string) WordCount {
+func NewWordCount(name, help string, labels []string) Metric {
 	wc := WordCount{}
 	//registry.MustRegister(m.g)
 	return wc

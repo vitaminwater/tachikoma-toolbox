@@ -10,8 +10,23 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/mitchellh/mapstructure"
 	log "github.com/sirupsen/logrus"
 )
+
+/**
+ * error
+ */
+
+func Fatal(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+/**
+ * Http proxy client
+ */
 
 var client *http.Client
 
@@ -45,6 +60,10 @@ func GetTransport() http.RoundTripper {
 	return client.Transport
 }
 
+/**
+ * JSON
+ */
+
 func GetJSONDirect(url string, o interface{}) {
 	r, err := http.Get(url)
 	Fatal(err)
@@ -60,5 +79,19 @@ func GetJSON(url string, o interface{}) {
 	defer r.Body.Close()
 
 	err = json.NewDecoder(r.Body).Decode(o)
+	Fatal(err)
+}
+
+/**
+ * Unmap
+ */
+
+func Unmap(v map[string]interface{}, t interface{}) {
+	config := mapstructure.DecoderConfig{WeaklyTypedInput: true, Result: t}
+
+	decoder, err := mapstructure.NewDecoder(&config)
+	Fatal(err)
+
+	err = decoder.Decode(v)
 	Fatal(err)
 }

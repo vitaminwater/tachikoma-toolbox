@@ -3,7 +3,6 @@ package timeseries
 import (
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -34,8 +33,4 @@ func startHealthHandle() {
 
 func mustRegister(cs ...prometheus.Collector) {
 	metricsRegistry.MustRegister(cs...)
-}
-
-func labels(source, base, counter string) []string {
-	return []string{source, strings.ToUpper(base), strings.ToUpper(counter)}
 }
