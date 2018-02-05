@@ -5,7 +5,6 @@ import (
 	"reflect"
 
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
 )
 
 type metricRepository map[string]interface{}
@@ -21,7 +20,6 @@ func (r metricRepository) gaugeVec(name, help string, labels []string) *promethe
 			labels,
 		)
 		mustRegister(r[name].(prometheus.Collector))
-		logrus.Info("gaugeVec ", name)
 		return r[name].(*prometheus.GaugeVec)
 	} else {
 		return m.(*prometheus.GaugeVec)
@@ -39,7 +37,6 @@ func (r metricRepository) summaryVec(name, help string, labels []string) *promet
 			labels,
 		)
 		mustRegister(r[name].(prometheus.Collector))
-		logrus.Info("summaryVec ", name)
 		return r[name].(*prometheus.SummaryVec)
 	} else {
 		return m.(*prometheus.SummaryVec)
