@@ -65,7 +65,7 @@ func GenerateTimeseries(defaultLabels Labels, g TimeseriesJobGenerator) tachikom
 			return jobs
 		}
 
-		if tslabel, ok = tag.Lookup("tslabel"); ok == false {
+		if tslabel, ok = tag.Lookup("tslabel"); ok == true {
 			tslabel = strings.Replace(tslabel, " ", "", -1)
 			pairs := strings.Split(tslabel, ",")
 			for _, p := range pairs {

@@ -1,6 +1,10 @@
 package tachikoma
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/sirupsen/logrus"
+)
 
 type Scraper struct {
 	emitters []Emitter
@@ -26,17 +30,20 @@ func (s *Scraper) JobByName(name string) (Job, error) {
 }
 
 func (s Scraper) Start() {
-	go s.start()
 	s.input = make(chan interface{}, 100)
+	go s.start()
 	for _, e := range s.emitters {
 		go e.Start(s.input)
 	}
+	select {}
 }
 
 func (s Scraper) start() {
 	for i := range s.input {
 		for _, j := range s.jobs {
-			j.Run(i)
+			if err := j.Run(i); err != nil {
+				logrus.Warning(err)
+			}
 		}
 	}
 }

@@ -1,11 +1,52 @@
 package timeseries
 
 import (
-	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 )
+
+type metricRepository map[string]interface{}
+
+func (r metricRepository) gaugeVec(name, help string, labels []string) *prometheus.GaugeVec {
+	name = fmt.Sprintf("g_%s", name)
+	if m, ok := r[name]; ok == false {
+		r[name] = prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: name,
+				Help: help,
+			},
+			labels,
+		)
+		mustRegister(r[name].(prometheus.Collector))
+		logrus.Info("gaugeVec ", name)
+		return r[name].(*prometheus.GaugeVec)
+	} else {
+		return m.(*prometheus.GaugeVec)
+	}
+}
+
+func (r metricRepository) summaryVec(name, help string, labels []string) *prometheus.SummaryVec {
+	name = fmt.Sprintf("s_%s", name)
+	if m, ok := r[name]; ok == false {
+		r[name] = prometheus.NewSummaryVec(
+			prometheus.SummaryOpts{
+				Name: name,
+				Help: help,
+			},
+			labels,
+		)
+		mustRegister(r[name].(prometheus.Collector))
+		logrus.Info("summaryVec ", name)
+		return r[name].(*prometheus.SummaryVec)
+	} else {
+		return m.(*prometheus.SummaryVec)
+	}
+}
+
+var repo metricRepository = metricRepository{}
 
 type Metric interface {
 	Index([]string, interface{}) error
@@ -20,25 +61,14 @@ type GaugeMetric struct {
 }
 
 func (m GaugeMetric) Index(labels []string, d interface{}) error {
-	f, ok := d.(float64)
-	if ok != true {
-		return errors.New("GaugeMetric requires float64")
-	}
-	m.g.WithLabelValues(labels...).Set(f)
+	m.g.WithLabelValues(labels...).Set(reflect.ValueOf(d).Float())
 	return nil
 }
 
 func NewGaugeMetric(name, help string, labels []string) Metric {
 	m := GaugeMetric{
-		g: prometheus.NewGaugeVec(
-			prometheus.GaugeOpts{
-				Name: fmt.Sprintf("%s_gauge", name),
-				Help: help,
-			},
-			labels,
-		),
+		g: repo.gaugeVec(name, help, labels),
 	}
-	mustRegister(m.g)
 	return m
 }
 
@@ -51,26 +81,14 @@ type SummaryMetric struct {
 }
 
 func (m SummaryMetric) Index(labels []string, d interface{}) error {
-	f, ok := d.(float64)
-	if ok != true {
-		return errors.New("SummaryMetric requires float64")
-	}
-
-	m.g.WithLabelValues(labels...).Observe(f)
+	m.g.WithLabelValues(labels...).Observe(reflect.ValueOf(d).Float())
 	return nil
 }
 
 func NewSummaryMetric(name, help string, labels []string) Metric {
 	m := SummaryMetric{
-		g: prometheus.NewSummaryVec(
-			prometheus.SummaryOpts{
-				Name: fmt.Sprintf("%s_summary", name),
-				Help: help,
-			},
-			labels,
-		),
+		g: repo.summaryVec(name, help, labels),
 	}
-	mustRegister(m.g)
 	return m
 }
 
@@ -87,6 +105,5 @@ func (wc WordCount) Index(labels []string, d interface{}) error {
 
 func NewWordCount(name, help string, labels []string) Metric {
 	wc := WordCount{}
-	//registry.MustRegister(m.g)
 	return wc
 }

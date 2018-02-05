@@ -95,3 +95,23 @@ func Unmap(v map[string]interface{}, t interface{}) {
 	err = decoder.Decode(v)
 	Fatal(err)
 }
+
+/**
+ * Float
+ */
+
+type Float float64
+
+func (f *Float) UnmarshalJSON(b []byte) error {
+	var n json.Number
+	if err := json.Unmarshal(b, &n); err != nil {
+		return err
+	}
+	fl, err := n.Float64()
+	*f = Float(fl)
+	return err
+}
+
+func (f Float) MarshalJSON() ([]byte, error) {
+	return json.Marshal(float64(f))
+}
